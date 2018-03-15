@@ -7,8 +7,15 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.criterion.Conjunction;
+import org.hibernate.criterion.Disjunction;
+import org.hibernate.criterion.MatchMode;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.query.Query;
 import org.junit.After;
 import org.junit.Before;
@@ -17,7 +24,6 @@ import org.junit.Test;
 import com.amaker.util.HibernateUtil;
 import com.atguigu.hibernate.entities.Department;
 import com.atguigu.hibernate.entities.Employee;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
 
 
 public class HQLTest {
@@ -83,7 +89,7 @@ public class HQLTest {
 		int pageSize=5;//每页几条数据
 		
 		List<Employee> emps=query.setFirstResult( (pageNo-1) * pageSize )//第pageNo页的第一条数据
-			    								.setMaxResults(pageSize)
+			    								.setMaxResults(pageSize)                     //一次最多查出的对象数
 			    								.list();
 		System.out.println(emps);
 	}
@@ -227,7 +233,95 @@ public class HQLTest {
 			System.out.println(emp.getName()+", "+emp.getDept().getName());
 		}
 	}
-	
 	//HQL查询语句中若显示指定了检索策略，则会覆盖映射文件中配置的检索策略
+	
+	
+	@Test
+	public void testHQLUpdate(){
+		String hql="DELETE FROM Department d WHERE d.id=:id";
+		
+		session.createQuery(hql).setParameter("id", 1)
+		                                   .executeUpdate();
+	}
+	
+	
+	//--------------------------------------------分割线---------------------------------------------------------
+	
+	@Test
+	public void testQBC(){
+		//1.创建一个Criteria对象
+		Criteria criteria=session.createCriteria(Employee.class);
+		
+		//2.添加查询条件：在 QBC 中查询条件使用 Criterion来表示，Criterion可以通过 Restrictions 的静态方法得到
+		criteria.add(Restrictions.eq("email", "888358256@qq.com"));//email='448358256@qq.com' 条件
+		criteria.add(Restrictions.gt("salary", 5000F));//salary > 5000  条件。 5000F表示float类型
+		
+		//3.执行查询
+		Employee employee=(Employee)criteria.uniqueResult();
+		System.out.println(employee);
+	}
+	
+	
+	@Test
+	public void testQBC2(){
+		Criteria criteria=session.createCriteria(Employee.class);
+		
+		//1.AND :使用Conjunction表示，Conjunction本身就是一个Criterion对象，其中还可以添加Criterion对象。
+		Conjunction conjunction=Restrictions.conjunction();
+		conjunction.add(Restrictions.like("name", "明", MatchMode.ANYWHERE));// name LIKE '%明%'
+		Department dept=new Department();
+		dept.setId(890);
+		conjunction.add(Restrictions.eq("dept", dept));
+		System.out.println(conjunction); //conjunction 是 name like %明% and dept=Department [id=890]
+		
+		//2.OR :
+		Disjunction disjunction=Restrictions.disjunction();
+		disjunction.add(Restrictions.ge("salary", 1000F));//salary >= 1000.0
+		disjunction.add(Restrictions.isNull("email"));  //email <> null
+		System.out.println(disjunction);
+		
+		criteria.add(disjunction);
+		criteria.add(conjunction);
+		
+		criteria.list();
+	}
+	
+	@Test
+	public void testQBC3(){
+		Criteria criteria=session.createCriteria(Employee.class);
+		
+		//统计查询:使用Projection来表示，可以有Projections的静态方法得到
+		criteria.setProjection(Projections.max("salary"));//max(SALARY)
+		System.out.println(criteria.uniqueResult());
+	}
+	
+	@Test
+	public void testQBC4(){
+		Criteria criteria=session.createCriteria(Employee.class);
+		//1.添加排序
+		criteria.addOrder(Order.asc("salary"));//order by salary asc
+		criteria.addOrder(Order.desc("email"));//order by email desc
+		
+		//2.添加翻页方法
+		 int pageSize=5;//每页5行
+		 int pageNo=3;//第3页
+		criteria.setFirstResult((pageNo-1)*pageSize)
+				  .setMaxResults(pageSize) //一次最多查出的对象数
+				  .list();
+	}
+	
+	
+	
+	//--------------------------------------------分割线---------------------------------------------------------
+	
+	@Test
+	public void testNativeSQL(){
+		String sql="INSERT INTO DepartmentTbl VALUES(?,?)";
+		Query query= session.createSQLQuery(sql);
+		
+		query.setParameter(0, 1)
+		        .setParameter(1,"摸鱼部")
+		        .executeUpdate();
+	}
 	
 }
