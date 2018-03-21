@@ -2,6 +2,10 @@
 <!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd" >
 <hibernate-mapping>
 	<class name="com.atguigu.hibernate.entities.Department" table="DepartmentTbl" >
+		
+		<!-- 若不在hibernate.cfg.xml文件中配置collection-cache节点，也可以在.hbm.xml这里配置cache节点来设置集合二级缓存 -->
+		<!-- <cache usage="read-write"/> -->
+		
 		<id name="id" type="java.lang.Integer">
 			<column name="ID"/>
 			<generator class="native"/>
@@ -12,6 +16,8 @@
 		
 		
 		<set name="emps" table="EmployeeTbl" inverse="true" lazy="true">
+			<!-- 对于集合级别的二级缓存，若不在hibernate.cfg.xml文件中配置collection-cache节点,则还要在.hbm.xml的set节点中配置 -->
+			<!-- <cache usage="read-write"/> -->
 			<key column="DEPT_ID"></key>
 			<one-to-many class="com.atguigu.hibernate.entities.Employee"></one-to-many>
 		</set>
