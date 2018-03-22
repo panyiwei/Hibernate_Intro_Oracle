@@ -26,7 +26,9 @@ public class HibernateUtil {
 			//1).创建Configuration对象：对应hibernate 的基本配置信息和 对象关系映射信息
 		Configuration configuration=new Configuration().configure();
 			//2).创建一个serviceRegistry对象：hibernate 4.x 新添加的对象。hibernate的任何配置和服务都需要在该对象中注册后才能有效
-		ServiceRegistry serviceRegistry=new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+		ServiceRegistry serviceRegistry=new StandardServiceRegistryBuilder()
+															.applySettings(configuration.getProperties())
+															.build();
 			//3).
 		sessionFactory=configuration.buildSessionFactory(serviceRegistry);
 		//2.创建一个Session对象
